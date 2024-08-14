@@ -4,8 +4,9 @@ from datetime import datetime
 from enum import auto, StrEnum
 
 from sqlalchemy import ForeignKey, String, DateTime, CheckConstraint
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from .db import Base
 
 class TransactionSplitType(StrEnum):
     Equally = auto()
@@ -13,11 +14,6 @@ class TransactionSplitType(StrEnum):
     Percentages = auto()
     Shares = auto()
     Adjustments = auto()
-
-
-# declarative base class
-class Base(DeclarativeBase):
-    pass
 
 
 class User(Base):

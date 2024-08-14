@@ -1,0 +1,8 @@
+-r requirements.txt
+build
+isort
+mypy
+pytest
+debugpy
+psutil
+requests
