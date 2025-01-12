@@ -23,27 +23,19 @@ def db_session(setup_database):
     session.rollback()
     session.close()
 
-# @pytest.fixture(scope="function")
-# def db_session():
-#     Base.metadata.create_all(engine)
-#     session = Session()
-#     yield session
-#     session.rollback()
-#     session.close()
-
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 def alice_user():
     alice = models.User(name="Alice", email="alice@example.com", password_hash="alicepwd",
                 oauth_provider="ExampleProvider", oauth_id="alice_oauth_id")
     return alice
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 def bob_user():
     bob = models.User(name="Bob", email="bob@example.com", password_hash="bobpwd",
                 oauth_provider="ExampleProvider", oauth_id="bob_oauth_id")
     return bob
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 def charlie_user():
     charlie = models.User(name="Charlie", email="charlie@example.com", password_hash="charliepwd",
                 oauth_provider="ExampleProvider", oauth_id="charlie_oauth_id")

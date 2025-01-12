@@ -247,6 +247,8 @@ class Comment(Base):
 
     comment: Mapped[str] = mapped_column(Text, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(timezone.utc))
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(timezone.utc),
+                                                 onupdate=datetime.now(timezone.utc))
 
     def __repr__(self):
         return (f"Comment(id={self.id!r}, transaction_id={self.transaction_id!r}, "

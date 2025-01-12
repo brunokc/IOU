@@ -37,21 +37,13 @@ class User(AttributeDelegator):
 
     def create_group(self,
             group_name: str,
+            /,
             icon: str | None = None,
             valid_from: datetime | None = None,
             valid_until: datetime | None = None):
-        group = models.Group(name=group_name, icon=icon, valid_from=valid_from,
-                             valid_until=valid_until, owner=self)
-        group.users.append(self)
-        db.session.add(group)
-        db.session.flush()
-        return Group(group)
+        return Group.create(group_name, self, icon=icon, valid_from=valid_from,
+                             valid_until=valid_until)
 
-    def add_transaction(self, description: str, debtor: "User", amount: float,
+    def add_transaction(self, description: str, amount: float, debtor: "User",
                         group: Group | None = None):
-        transaction = models.Transaction(payer=self, debtor=debtor, group=group,
-                                         description=description, amount_cents=int(amount * 100),
-                                         created_by=self)
-        db.session.add(transaction)
-        db.session.flush()
-        return Transaction(transaction)
+        return Transaction.create(description, amount, self, self, debtor, group)

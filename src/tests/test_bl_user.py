@@ -73,7 +73,7 @@ class TestBusinessLogicUsers:
 
     def test_user_to_user_transaction(self, mock_session, alice_user, bob_user):
         alice, bob = self.alice_and_bob(alice_user, bob_user)
-        transaction = alice.add_transaction("Lunch at McDonald's", bob, 123.45)
+        transaction = alice.add_transaction("Lunch at McDonald's", 123.45, bob)
         assert transaction.payer == alice
         assert transaction.debtor == bob
         assert transaction.amount_cents == 12345

@@ -43,4 +43,4 @@ class AttributeDelegator:
         return getattr(self._delegated, name)
 
     def __repr__(self):
-        return repr(self._delegated)
+        return "BL::" + repr(self._delegated)
