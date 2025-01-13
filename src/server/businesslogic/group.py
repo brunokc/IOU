@@ -20,10 +20,10 @@ class Group(AttributeDelegator):
                valid_until: datetime | None = None):
         group = models.Group(name=group_name, icon=icon, valid_from=valid_from,
                              valid_until=valid_until, owner=owner)
-        group.users.append(owner)
+        group.members.append(owner)
         if members:
             for member in members:
-                group.users.append(member)
+                group.members.append(member)
         db.session.add(group)
         db.session.flush()
         return Group(group)
@@ -32,17 +32,17 @@ class Group(AttributeDelegator):
     def transactions(self):
         return [Transaction(transaction) for transaction in self._delegated.transactions]
 
-    def add_user(self, user):
-        self.users.append(user)
+    def add_member(self, member):
+        self.members.append(member)
         db.session.flush()
 
-    def remove_user(self, user):
-        self.users.remove(user)
+    def remove_member(self, member):
+        self.members.remove(member)
         db.session.flush()
 
     def add_transaction(self, description: str, amount: float, payer: "User",
-                        debtor: "User | None" = None):
+                        debtor_or_splits: "User | list[Split]"):
         # Using payer as the creator of the transaction
-        return Transaction.create(description, amount, payer, payer, debtor, self)
+        return Transaction.create(description, amount, payer, payer, debtor_or_splits, self)
 
     # Balances?

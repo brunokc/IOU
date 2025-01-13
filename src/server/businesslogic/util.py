@@ -42,5 +42,11 @@ class AttributeDelegator:
     def __getattr__(self, name):
         return getattr(self._delegated, name)
 
+    # def __setattr__(self, name, value):
+    #     if hasattr(self, name):
+    #         setattr(self, name, value)
+    #     else:
+    #         setattr(self._delegated, name, value)
+
     def __repr__(self):
         return "BL::" + repr(self._delegated)

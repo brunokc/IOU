@@ -13,7 +13,6 @@ class User(AttributeDelegator):
         super().__init__(user)
 
     @staticmethod
-    # @transactional(db.session)
     def create(name: str, email: str, password_hash: str, oauth_provider: str, oauth_id: str):
         user = models.User(name=name, email=email, password_hash=password_hash,
                            oauth_provider=oauth_provider, oauth_id=oauth_id)
@@ -45,5 +44,5 @@ class User(AttributeDelegator):
                              valid_until=valid_until)
 
     def add_transaction(self, description: str, amount: float, debtor: "User",
-                        group: Group | None = None):
+                        group: "Group | None" = None):
         return Transaction.create(description, amount, self, self, debtor, group)

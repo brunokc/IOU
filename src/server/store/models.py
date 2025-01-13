@@ -76,7 +76,7 @@ class User(Base):
                                                  primaryjoin="User.id == Friendship.user_id",
                                                  secondaryjoin="User.id == Friendship.friend_user_id")
     owned_groups: Mapped[list["Group"]] = relationship(back_populates="owner")
-    groups: Mapped[list["Group"]] = relationship(back_populates="users", secondary="group_membership")
+    groups: Mapped[list["Group"]] = relationship(back_populates="members", secondary="group_membership")
     splits: Mapped[list["Split"]] = relationship(back_populates="debtor")
 
     owed_transactions: Mapped[list["Transaction"]] = relationship(back_populates="payer", foreign_keys="Transaction.payer_id")
@@ -125,7 +125,7 @@ class Group(Base):
     valid_from: Mapped[datetime] = mapped_column(nullable=True)
     valid_until: Mapped[datetime] = mapped_column(nullable=True)
 
-    users: Mapped[list[User]] = relationship(back_populates="groups", secondary="group_membership")
+    members: Mapped[list[User]] = relationship(back_populates="groups", secondary="group_membership")
     transactions: Mapped[list["Transaction"]] = relationship(back_populates="group")
 
     owner: Mapped[User] = relationship(back_populates="owned_groups")
@@ -184,8 +184,8 @@ class Transaction(Base):
     comments: Mapped[list["Comment"]] = relationship(back_populates="transaction")
 
     def __repr__(self):
-        return (f"Transaction(id={self.id!r}, description={self.description!r}, "
-                f"payer={self.payer.email!r}, amount_cents={self.amount_cents!r})")
+        return (f"Transaction(id={self.id!r}, description={self.description!r}, payer={self.payer.email!r}, "
+                f"group={self.group!r}, debtor={self.debtor!r}, amount_cents={self.amount_cents!r})")
 
 
 class Split(Base):
@@ -202,15 +202,16 @@ class Split(Base):
     order: Mapped[int] = mapped_column(nullable=False)
     type: Mapped[TransactionSplitType] = mapped_column(nullable=False)
     amount_cents: Mapped[int] = mapped_column(BigInteger, nullable=True)
-    share: Mapped[float] = mapped_column(nullable=True)
-    share_numerator: Mapped[int] = mapped_column(nullable=True)
+    # share: Mapped[float] = mapped_column(nullable=True)
+    share: Mapped[int] = mapped_column(nullable=True)
+    # share_numerator: Mapped[int] = mapped_column(nullable=True)
     share_denominator: Mapped[int] = mapped_column(nullable=True)
     # extra_cents: Mapped[int] = mapped_column(BigInteger, nullable=True)
 
     def __repr__(self):
-        return (f"Split(id={self.id!r}, transaction={self.transaction_id!r}, payer={self.payer.email!r}, "
-                f"debtor={self.debtor_id!r}, order={self.order!r}, type={self.type!r}, "
-                f"share_numerator={self.share_numerator!r}, share_denominator={self.share_denominator!r})")
+        return (f"Split(id={self.id!r}, transaction={self.transaction!r}, debtor={self.debtor!r}, "
+                f"order={self.order!r}, type={self.type!r}, amount_cents={self.amount_cents!r}, "
+                f"share={self.share!r}, share_denominator={self.share_denominator!r})")
 
 
 class Balance(Base):

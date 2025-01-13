@@ -29,9 +29,9 @@ class TestBusinessLogicGroups:
         assert bob.id == 2
 
         group = alice.create_group("Hawaii 2024")
-        group.users.append(bob)
-        assert group.users[0] == alice
-        assert group.users[1] == bob
+        group.members.append(bob)
+        assert group.members[0] == alice
+        assert group.members[1] == bob
         return alice, bob, group
 
 
