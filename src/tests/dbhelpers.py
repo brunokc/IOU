@@ -40,3 +40,9 @@ def charlie_user():
     charlie = models.User(name="Charlie", email="charlie@example.com", password_hash="charliepwd",
                 oauth_provider="ExampleProvider", oauth_id="charlie_oauth_id")
     return charlie
+
+@pytest.fixture(scope="function")
+def david_user():
+    david = models.User(name="David", email="david@example.com", password_hash="davidpwd",
+                oauth_provider="ExampleProvider", oauth_id="david_oauth_id")
+    return david

@@ -30,7 +30,7 @@ class Transaction(AttributeDelegator):
                 # print(f"split {idx}: {split}")
 
         transaction = Transaction(transaction_model)
-        transaction.validate_splits()
+        transaction._validate_splits()
 
         db.session.add(transaction_model)
         db.session.flush()
@@ -52,7 +52,7 @@ class Transaction(AttributeDelegator):
     def comments(self):
         return [Comment(comment) for comment in self._delegated.comments]
 
-    def validate_splits(self):
+    def _validate_splits(self):
         # There's nothing to validate for the single debtor case
         if len(self._delegated.splits) == 0:
             return
@@ -61,8 +61,9 @@ class Transaction(AttributeDelegator):
         shares = 0
         denominator = None
         for split in self._delegated.splits:
-            # sum += split.amount
-            shares += split.share
+            # sum += split.amount_cents * 100
+            if split.share:
+                shares += split.share
             if not denominator:
                 denominator = split.share_denominator
             else:

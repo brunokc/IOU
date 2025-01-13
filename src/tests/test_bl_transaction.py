@@ -8,7 +8,7 @@ from server import businesslogic
 from server.businesslogic.split import SplitType
 from server.store import db, models
 
-from .dbhelpers import setup_database, db_session, alice_user, bob_user, charlie_user
+from .dbhelpers import setup_database, db_session, alice_user, bob_user, charlie_user, david_user
 
 def mock_db_session(db, session):
     setattr(db, "oldsession", db.session)
@@ -36,22 +36,38 @@ class TestBusinessLogicTransactions:
         return alice, bob, group
 
     def alice_bob_charlie(self, alice_user, bob_user, charlie_user):
-        db.session.add_all([alice_user, bob_user, charlie_user])
+        alice, bob, group = self.alice_and_bob(alice_user, bob_user)
+        db.session.add(charlie_user)
         db.session.flush()
-        alice = businesslogic.User(alice_user)
-        bob = businesslogic.User(bob_user)
         charlie = businesslogic.User(charlie_user)
         assert alice.id == 1
         assert bob.id == 2
         assert charlie.id == 3
 
-        group = alice.create_group("Hawaii 2024")
-        group.members.extend([bob, charlie])
+        group.members.append(charlie)
         db.session.flush()
         assert group.members[0] == alice
         assert group.members[1] == bob
         assert group.members[2] == charlie
         return alice, bob, charlie, group
+
+    def alice_bob_charlie_david(self, alice_user, bob_user, charlie_user, david_user):
+        alice, bob, charlie, group = self.alice_bob_charlie(alice_user, bob_user, charlie_user)
+        db.session.add(david_user)
+        db.session.flush()
+        david = businesslogic.User(david_user)
+        assert alice.id == 1
+        assert bob.id == 2
+        assert charlie.id == 3
+        assert david.id == 4
+
+        group.members.append(david)
+        db.session.flush()
+        assert group.members[0] == alice
+        assert group.members[1] == bob
+        assert group.members[2] == charlie
+        assert group.members[3] == david
+        return alice, bob, charlie, david, group
 
     def setup_user_group_transaction(self, alice_user, bob_user):
         alice, bob, group = self.alice_and_bob(alice_user, bob_user)
@@ -97,3 +113,17 @@ class TestBusinessLogicTransactions:
         with pytest.raises(ValueError) as ex:
             transaction = group.add_transaction("ABC Store 12/22", 340.27, alice, [bob_split, charlie_split])
         assert "Sum of all shares" in str(ex.value)
+
+    def test_add_group_transaction_split_with_fixed_amount(self, mock_session, alice_user, bob_user,
+                                                           charlie_user, david_user):
+        alice, bob, charlie, david, group = self.alice_bob_charlie_david(alice_user, bob_user,
+                                                                         charlie_user, david_user)
+        bob_split = businesslogic.Split.create(bob, SplitType.Adjustments, amount=50)
+        charlie_split = businesslogic.Split.create(charlie, SplitType.Percentages, share=60)
+        david_split = businesslogic.Split.create(david, SplitType.Percentages, share=40)
+        transaction = group.add_transaction("ABC Store 12/22", 200, alice,
+                                            [bob_split, charlie_split, david_split])
+        assert bob_split in transaction.splits
+        assert bob_split.amount == 50
+        assert charlie_split in transaction.splits
+        assert david_split in transaction.splits
