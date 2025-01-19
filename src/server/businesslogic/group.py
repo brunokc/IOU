@@ -19,7 +19,7 @@ class Group(AttributeDelegator):
                valid_from: datetime | None = None,
                valid_until: datetime | None = None):
         group = models.Group(name=group_name, icon=icon, valid_from=valid_from,
-                             valid_until=valid_until, owner=owner)
+                             valid_until=valid_until, owner=owner._delegated)
         group.members.append(owner)
         if members:
             for member in members:
@@ -28,17 +28,13 @@ class Group(AttributeDelegator):
         db.session.flush()
         return Group(group)
 
-    @property
-    def transactions(self):
-        return [Transaction(transaction) for transaction in self._delegated.transactions]
+    # def add_member(self, member):
+    #     self.members.append(member)
+    #     db.session.flush()
 
-    def add_member(self, member):
-        self.members.append(member)
-        db.session.flush()
-
-    def remove_member(self, member):
-        self.members.remove(member)
-        db.session.flush()
+    # def remove_member(self, member):
+    #     self.members.remove(member)
+    #     db.session.flush()
 
     def add_transaction(self, description: str, amount: float, payer: "User",
                         debtor_or_splits: "User | list[Split]"):

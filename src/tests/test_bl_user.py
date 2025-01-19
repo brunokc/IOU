@@ -68,7 +68,7 @@ class TestBusinessLogicUsers:
         group = alice.create_group("Alice's group")
         assert group.id == 1
         assert group.owner == alice
-        assert alice in group.users
+        assert alice in group.members
 
 
     def test_user_to_user_transaction(self, mock_session, alice_user, bob_user):

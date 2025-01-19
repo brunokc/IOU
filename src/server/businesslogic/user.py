@@ -6,6 +6,7 @@ from server.store import models
 
 from .group import Group
 from .transaction import Transaction
+from .debt import Debt
 from .util import AttributeDelegator
 
 class User(AttributeDelegator):
@@ -19,14 +20,6 @@ class User(AttributeDelegator):
         db.session.add(user)
         db.session.flush()
         return User(user)
-
-    @property
-    def owed_transactions(self):
-        return [Transaction(transaction) for transaction in self._delegated.owed_transactions]
-
-    @property
-    def owing_transactions(self):
-        return [Transaction(transaction) for transaction in self._delegated.owing_transactions]
 
     def add_friend(self, *friends: list["User"]):
         for friend in friends:
@@ -46,3 +39,9 @@ class User(AttributeDelegator):
     def add_transaction(self, description: str, amount: float, debtor: "User",
                         group: "Group | None" = None):
         return Transaction.create(description, amount, self, self, debtor, group)
+
+    def get_payments_to(self, user: "User"):
+        return [Debt(debt) for debt in self.creditor_debts if debt.debtor == user]
+
+    def get_debts_to(self, user: "User"):
+        return [Debt(debt) for debt in self.debtor_debts if debt.creditor == user]

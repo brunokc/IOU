@@ -72,16 +72,18 @@ class User(Base):
 
     # Relationships
     # friends: Mapped[list["User"]] = relationship(secondary="friendship", foreign_keys="Friendship.user_id")
-    friends: Mapped[list["User"]] = relationship(secondary="friendship",
-                                                 primaryjoin="User.id == Friendship.user_id",
-                                                 secondaryjoin="User.id == Friendship.friend_user_id")
+    friends: Mapped[list["server.store.models.User"]] = relationship(secondary="friendship",
+                                                 primaryjoin="server.store.models.User.id == Friendship.user_id",
+                                                 secondaryjoin="server.store.models.User.id == Friendship.friend_user_id")
     owned_groups: Mapped[list["Group"]] = relationship(back_populates="owner")
     groups: Mapped[list["Group"]] = relationship(back_populates="members", secondary="group_membership")
     splits: Mapped[list["Split"]] = relationship(back_populates="debtor")
 
-    owed_transactions: Mapped[list["Transaction"]] = relationship(back_populates="payer", foreign_keys="Transaction.payer_id")
-    owing_transactions: Mapped[list["Transaction"]] = relationship(back_populates="debtor", foreign_keys="Transaction.debtor_id")
-    balances: Mapped[list["Balance"]] = relationship(back_populates="user")
+    owed_transactions: Mapped[list["Transaction"]] = relationship(back_populates="payer", foreign_keys="server.store.models.Transaction.payer_id")
+    owing_transactions: Mapped[list["Transaction"]] = relationship(back_populates="debtor", foreign_keys="server.store.models.Transaction.debtor_id")
+    # balances: Mapped[list["Balance"]] = relationship(back_populates="user")
+    creditor_debts: Mapped[list["Debt"]] = relationship(back_populates="creditor", foreign_keys="server.store.models.Debt.creditor_id")
+    debtor_debts: Mapped[list["Debt"]] = relationship(back_populates="debtor",foreign_keys="server.store.models.Debt.debtor_id")
     comments: Mapped[list["Comment"]] = relationship(back_populates="user")
 
     def __str__(self):
@@ -136,7 +138,8 @@ class Group(Base):
                                                  onupdate=datetime.now(timezone.utc))
 
     # Other relationships
-    balances: Mapped[list["Balance"]] = relationship(back_populates="group")
+    # balances: Mapped[list["Balance"]] = relationship(back_populates="group")
+    debts: Mapped[list["Debt"]] = relationship(back_populates="group")
 
     def __repr__(self):
         return f"Group(id={self.id!r}, name={self.name!r}, owner={self.owner.email!r})"
@@ -164,7 +167,7 @@ class Transaction(Base):
     group_id: Mapped[int] = mapped_column(ForeignKey("groups.id", ondelete="CASCADE"), nullable=True)
     group: Mapped[Group] = relationship(back_populates="transactions", foreign_keys=group_id)
 
-    splits: Mapped[list["Split"]] = relationship(back_populates="transaction")
+    splits: Mapped[list["server.store.models.Split"]] = relationship(back_populates="transaction")
 
     debtor_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=True)
     debtor: Mapped[User] = relationship(back_populates="owing_transactions", foreign_keys=debtor_id)
@@ -175,13 +178,13 @@ class Transaction(Base):
     # split_type: Mapped[TransactionSplitType] = mapped_column(nullable=False)
 
     created_by_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
-    created_by: Mapped[User] = relationship(foreign_keys="Transaction.created_by_id")
+    created_by: Mapped[User] = relationship(foreign_keys="server.store.models.Transaction.created_by_id")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(timezone.utc))
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(timezone.utc),
                                                  onupdate=datetime.now(timezone.utc))
 
     # Other relationships
-    comments: Mapped[list["Comment"]] = relationship(back_populates="transaction")
+    comments: Mapped[list["server.store.models.Comment"]] = relationship(back_populates="transaction")
 
     def __repr__(self):
         return (f"Transaction(id={self.id!r}, description={self.description!r}, payer={self.payer.email!r}, "
@@ -205,33 +208,56 @@ class Split(Base):
     # share: Mapped[float] = mapped_column(nullable=True)
     share: Mapped[int] = mapped_column(nullable=True)
     # share_numerator: Mapped[int] = mapped_column(nullable=True)
-    share_denominator: Mapped[int] = mapped_column(nullable=True)
+    # share_denominator: Mapped[int] = mapped_column(nullable=True)
     # extra_cents: Mapped[int] = mapped_column(BigInteger, nullable=True)
 
     def __repr__(self):
         return (f"Split(id={self.id!r}, transaction={self.transaction!r}, debtor={self.debtor!r}, "
                 f"order={self.order!r}, type={self.type!r}, amount_cents={self.amount_cents!r}, "
-                f"share={self.share!r}, share_denominator={self.share_denominator!r})")
+                f"share={self.share!r})") #, share_denominator={self.share_denominator!r})")
 
 
-class Balance(Base):
-    __tablename__ = "balances"
+# class Balance(Base):
+#     __tablename__ = "balances"
+
+#     id: Mapped[int] = mapped_column(primary_key=True)
+
+#     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+#     user: Mapped[User] = relationship(back_populates="balances")
+
+#     group_id: Mapped[int] = mapped_column(ForeignKey("groups.id", ondelete="CASCADE"), nullable=True)
+#     group: Mapped[Group] = relationship(back_populates="balances")
+
+#     amount_cents: Mapped[int] = mapped_column(BigInteger, default=0, nullable=False)
+#     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(timezone.utc),
+#                                                  onupdate=datetime.now(timezone.utc))
+
+#     def __repr__(self):
+#         return (f"Balance(id={self.id!r}, user={self.user.email!r}, group={self.group.name!r}, "
+#                 f"amount_cents={self.amount_cents!r})")
+
+
+class Debt(Base):
+    __tablename__ = "debts"
 
     id: Mapped[int] = mapped_column(primary_key=True)
 
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    user: Mapped[User] = relationship(back_populates="balances")
-
     group_id: Mapped[int] = mapped_column(ForeignKey("groups.id", ondelete="CASCADE"), nullable=True)
-    group: Mapped[Group] = relationship(back_populates="balances")
+    creditor_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    debtor_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
 
     amount_cents: Mapped[int] = mapped_column(BigInteger, default=0, nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(timezone.utc),
+    last_updated: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(timezone.utc),
                                                  onupdate=datetime.now(timezone.utc))
 
+    group: Mapped[Group] = relationship(back_populates="debts")
+    creditor: Mapped[User] = relationship(back_populates="creditor_debts", foreign_keys=creditor_id)
+    debtor: Mapped[User] = relationship(back_populates="debtor_debts", foreign_keys=debtor_id)
+
     def __repr__(self):
-        return (f"Balance(id={self.id!r}, user={self.user.email!r}, group={self.group.name!r}, "
-                f"amount_cents={self.amount_cents!r})")
+        return (f"Debt(id={self.id!r}, creditor={self.creditor.email!r}, debtor={self.debtor.email!r}, "
+                f"group={self.group.name!r}, amount_cents={self.amount_cents!r}, "
+                f"last_updated={self.last_updated!r})")
 
 
 class Comment(Base):

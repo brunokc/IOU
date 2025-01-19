@@ -1,4 +1,3 @@
-
 import pytest
 
 # from sqlalchemy import select
@@ -30,8 +29,11 @@ class TestBusinessLogicTransactions:
         assert bob.id == 2
 
         group = alice.create_group("Hawaii 2024")
-        group.members.append(bob)
+        assert group.owner == alice
+        assert len(group.members) == 1
         assert group.members[0] == alice
+        group.members.append(bob)
+        assert len(group.members) == 2
         assert group.members[1] == bob
         return alice, bob, group
 
@@ -46,6 +48,7 @@ class TestBusinessLogicTransactions:
 
         group.members.append(charlie)
         db.session.flush()
+        assert len(group.members) == 3
         assert group.members[0] == alice
         assert group.members[1] == bob
         assert group.members[2] == charlie
@@ -63,6 +66,7 @@ class TestBusinessLogicTransactions:
 
         group.members.append(david)
         db.session.flush()
+        assert len(group.members) == 4
         assert group.members[0] == alice
         assert group.members[1] == bob
         assert group.members[2] == charlie
@@ -92,6 +96,10 @@ class TestBusinessLogicTransactions:
 
         return alice, bob, group, transaction
 
+    #
+    # Tests
+    #
+
     def test_add_group_transaction_single_debtor_comment(self, mock_session, alice_user, bob_user):
         alice, _, _, transaction = self.setup_user_group_transaction(alice_user, bob_user)
         comment = transaction.add_comment("Transaction created", alice)
@@ -112,7 +120,23 @@ class TestBusinessLogicTransactions:
         charlie_split = businesslogic.Split.create(charlie, SplitType.Percentages, share=60)
         with pytest.raises(ValueError) as ex:
             transaction = group.add_transaction("ABC Store 12/22", 340.27, alice, [bob_split, charlie_split])
-        assert "Sum of all shares" in str(ex.value)
+        assert "Sum of all" in str(ex.value)
+
+    def test_add_group_transaction_invalid_split_update(self, mock_session, alice_user, bob_user, charlie_user):
+        alice, bob, charlie, group = self.alice_bob_charlie(alice_user, bob_user, charlie_user)
+        bob_split = businesslogic.Split.create(bob, SplitType.Percentages, share=40)
+        charlie_split = businesslogic.Split.create(charlie, SplitType.Percentages, share=60)
+        assert bob_split.share == 40
+        assert charlie_split.share == 60
+        transaction = group.add_transaction("ABC Store 12/22", 340.27, alice, [bob_split, charlie_split])
+        #assert debts
+        bob_split.share = 50
+        charlie_split.share = 70
+        with pytest.raises(ValueError) as ex:
+            transaction.splits.clear()
+            transaction.splits.extend([bob_split, charlie_split])
+            db.session.flush()
+        assert "Sum of all" in str(ex.value)
 
     def test_add_group_transaction_split_with_fixed_amount(self, mock_session, alice_user, bob_user,
                                                            charlie_user, david_user):
